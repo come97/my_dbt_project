@@ -1,24 +1,22 @@
--- models/mart/mrt_monthly_order_report.sql
-
 WITH base_orders AS (
   SELECT
-    DATE_TRUNC(DATE(order_date), MONTH) AS order_month,
-    user_name,
+    DATE_TRUNC(DATE(order_created_at), MONTH) AS order_month,
+    user_id,
     order_id
-  FROM {{ source('sales_database', 'order') }}
+  FROM {{ ref('stg_sales_database__order') }}
 ),
 
 users_norm AS (
   SELECT
-    user_name,
-    UPPER(TRIM(customer_state)) AS customer_state_norm
-  FROM {{ source('sales_database', 'user') }}
+    user_id,
+    user_state
+  FROM {{ ref('stg_sales_database__user') }}
 ),
 
 monthly_users_recap AS (
   SELECT
     order_month,
-    COUNT(DISTINCT user_name) AS total_monthly_users
+    COUNT(DISTINCT user_id) AS total_monthly_users
   FROM base_orders
   GROUP BY order_month
 ),
@@ -26,10 +24,10 @@ monthly_users_recap AS (
 total_monthly_user_from_jawa_timur AS (
   SELECT
     o.order_month,
-    COUNT(DISTINCT o.user_name) AS total_monthly_users_from_jawa_timur
+    COUNT(DISTINCT o.user_id) AS total_monthly_users_from_jawa_timur
   FROM base_orders o
-  LEFT JOIN users_norm u USING (user_name)
-  WHERE u.customer_state_norm = 'JAWA TIMUR'
+  LEFT JOIN users_norm u USING (user_id)
+  WHERE u.user_state = 'JAWA TIMUR'
   GROUP BY o.order_month
 ),
 
@@ -49,4 +47,4 @@ SELECT
 FROM monthly_users_recap u
 LEFT JOIN total_monthly_user_from_jawa_timur jt ON jt.order_month = u.order_month
 LEFT JOIN monthly_orders_recap o               ON o.order_month  = u.order_month
-ORDER BY u.order_month;
+ORDER BY u.order_month

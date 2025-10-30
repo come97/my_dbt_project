@@ -1,28 +1,16 @@
 version: 2
 
 sources:
-  - name: module2_fivetran
-    schema: module2_fivetran
+  - name: local_bike
+    schema: local_bike
     tables:
-      - name: events_20210131
-      
-  - name: google_sheets
-    schema: google_sheets
-    tables:
-      - name: account_manager_region_mapping
-
-  - name: sales_database
-    schema: sales_database
-    tables:
-      - name: feedback
-      - name: payment
-      - name: product
-      - name: order
-      - name: order_item
-      - name: seller
-      - name: user
-
-  - name: airbnb
-    schema: airbnb
-    tables:
-      - name: listings
+      - name: brands
+      - name: categories
+      - name: customers
+      - name: order_items
+      - name: orders
+      - name: products
+      - name: staffs
+      - name: stocks
+      - name: stores
+ 

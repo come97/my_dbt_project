@@ -9,7 +9,7 @@ select
     store_id,
     store_name,
     sum(quantity) as qty,
-    sum(gross_value) as list_value,
+    sum(gross_value) as total_value,
     sum(net_revenue) as revenue
 from {{ ref('int__items_enriched') }}
 group by

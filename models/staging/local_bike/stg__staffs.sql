@@ -1,5 +1,6 @@
 select
 staff_id,
+concat(upper(substr(first_name, 1, 1)), '. ', last_name) as staff_name,
 first_name,
 last_name,
 email,

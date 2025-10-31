@@ -8,3 +8,4 @@ shipped_date,
 store_id,
 staff_id
 from {{ source('local_bike', 'orders') }}
+where order_date < '2018-04-30'

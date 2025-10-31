@@ -1,0 +1,156 @@
+version: 2
+
+sources:
+  - name: local_bike
+    schema: local_bike
+    tables:
+      - name: orders
+        loaded_at_field: order_date
+        freshness:
+          warn_after: {count: 365, period: day}
+          error_after: {count: 9999, period: day}
+      - name: order_items
+      - name: products
+      - name: staffs
+      - name: stores
+      - name: categories
+      - name: brands
+      - name: customers
+      - name: stocks
+
+models:
+
+  # --- STAGING ---
+  - name: stg__orders
+    tests:
+      - not_null:
+          column_name: order_id
+      - unique:
+          column_name: order_id
+      - accepted_values:
+          column_name: order_status
+          values: [1,2,3,4]
+          quote: false
+    columns:
+      - name: customer_id
+        tests:
+          - relationships:
+              to: ref('stg__customers')
+              field: customer_id
+      - name: store_id
+        tests:
+          - relationships:
+              to: ref('stg__stores')
+              field: store_id
+      - name: staff_id
+        tests:
+          - relationships:
+              to: ref('stg__staffs')
+              field: staff_id
+
+  - name: stg__order_items
+    tests:
+      - not_null:
+          column_name: item_id
+      - unique:
+          column_name: item_id
+    columns:
+      - name: order_id
+        tests:
+          - relationships:
+              to: ref('stg__orders')
+              field: order_id
+      - name: product_id
+        tests:
+          - relationships:
+              to: ref('stg__products')
+              field: product_id
+
+  - name: stg__products
+    tests:
+      - unique: {column_name: product_id}
+      - not_null: {column_name: product_id}
+    columns:
+      - name: brand_id
+        tests:
+          - relationships:
+              to: ref('stg__brands')
+              field: brand_id
+      - name: category_id
+        tests:
+          - relationships:
+              to: ref('stg__categories')
+              field: category_id
+
+  - name: stg__staffs
+    tests:
+      - unique: {column_name: staff_id}
+      - not_null: {column_name: staff_id}
+
+  - name: stg__stores
+    tests:
+      - unique: {column_name: store_id}
+      - not_null: {column_name: store_id}
+
+  # --- INTERMEDIATE ---
+  - name: int__items_enriched
+    columns:
+      - name: quantity
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: discount
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "between 0 and 1"
+      - name: net_revenue
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: month
+        tests:
+          - not_null
+
+  # --- MART ---
+  - name: mrt__product_monthly
+    tests:
+      - not_null: {column_name: month}
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg__products')
+              field: product_id
+      - name: total_quantity_sold
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: discount_rate
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "between 0 and 1"
+
+  - name: mrt__staff_monthly
+    columns:
+      - name: staff_name
+        tests:
+          - not_null
+      - name: total_revenue
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+  - name: mrt__staff_store_monthly
+    columns:
+      - name: store_name
+        tests:
+          - not_null
+
+  - name: mrt__sales_store_monthly
+    columns:
+      - name: average_basket
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
